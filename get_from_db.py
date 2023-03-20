@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 import pymysql
 #pymysql.install_as_MySQLdb()
 
-engine = create_engine('mysql+pymysql://ruben:ferrari_18@localhost/sio_db')
+engine = create_engine('mysql+pymysql://xavi:ferrari_18@localhost/sio_db')
 
 with engine.connect() as conn:
     listingTable = pd.read_sql('Listing', con=conn)
