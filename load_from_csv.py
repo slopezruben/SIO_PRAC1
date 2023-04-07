@@ -29,6 +29,7 @@ diccionarioListing={
         "beds": types.Integer(),
         "amenities": types.JSON(),
         "price": types.Text(),
+        "price_float": types.Numeric(),
         "minimum_nights_avg_ntm": types.Numeric(),
         "maximum_nights_avg_ntm": types.Numeric(),
         "availability_30": types.Integer(),
@@ -59,6 +60,9 @@ engine = create_engine('mysql+pymysql://xavi:ferrari_18@localhost/sio_db')
 diccionario = pd.read_csv('diccionario.csv')
 diccionario = diccionario[['Field', 'Ignore','Table']].dropna()
 
+def parseToFloatPrice(price):
+    return float(price.strip('$').replace(',',''))
+
 def get_tables(path):
     df = pd.read_csv(f'dataset/{path}.csv')
 
@@ -71,13 +75,14 @@ def get_tables(path):
             campos.append(row['Field'])
         df_procesados[table]=df.loc[:,campos]
 
-
+    df["price_float"] = df["price"].apply(parseToFloatPrice) 
     subListingTable = df_procesados.get('Listing')
     subHostTable = df_procesados.get('Host')
     subNeighborhoodTable = df_procesados.get('Neighborhood')
 
     subListingTable['city_id'] = id_gen-1
     df_procesados.update({'Listing': join_host_list(subListingTable, subHostTable)})
+
     return subListingTable, subHostTable, subNeighborhoodTable
 
 for archivo in os.listdir(directorio):
@@ -102,3 +107,5 @@ listingTable.to_sql('Listing', con=engine, if_exists='replace',index=False, dtyp
 hostTable.to_sql('Host', con=engine, if_exists='replace',index=False, dtype=diccionarioHost)
 neighborhoodTable.to_sql('Neighborhood', con=engine, if_exists='replace',index=False, dtype=diccionarioNeighborhood)
 cityTable.to_sql('City', con=engine, if_exists='replace',index=False)
+
+print(listingTable["price_float"])
