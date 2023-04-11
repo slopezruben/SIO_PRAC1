@@ -2,7 +2,9 @@ import pandas as pd
 from sqlalchemy import create_engine, types
 import pymysql
 import os
-#pymysql.install_as_MySQLdb()a
+
+# Diccionario de los DataFrames
+# Sirve para que el motor pueda identificar que tipo es cada variable del DataFrame
 diccionarioHost={
         "host_id": types.Integer(),
         "host_name": types.Text(),
@@ -47,7 +49,8 @@ diccionarioListing={
         "reviews_per_month": types.Numeric(),
         }
 
-#Table Keys ['Host', 'Listing', 'Neighborhood']
+# Table Keys ['Host', 'Listing', 'Neighborhood']
+# Funcion para enlazar las ids de los host con sus respectivos alquileres
 def join_host_list(jlistingTable, jhostTable):
     joinedListingTable = jlistingTable.assign(host_id=jhostTable['host_id'] )
     return joinedListingTable
@@ -56,7 +59,14 @@ directorio = 'dataset'
 ciudades = []
 id_gen = 1
 
-engine = create_engine('mysql+pymysql://xavi:ferrari_18@localhost/sio_db')
+# Pasamos el nombre y contraseña de la base de datos
+user=input("insert db username: ")
+password=input("insert password: ")
+
+# Creación del motor para conectar con la base de datos
+engine = create_engine('mysql+pymysql://'+user+':'+password+'@localhost/sio_db')
+# Lectura del diccionario
+# Hace falta actualizar el CSV cada vez que añadamos una variable procesada
 diccionario = pd.read_csv('diccionario.csv')
 diccionario = diccionario[['Field', 'Ignore','Table']].dropna()
 
@@ -64,18 +74,25 @@ def parseToFloatPrice(price):
     return float(price.strip('$').replace(',',''))
 
 def get_tables(path):
+    #Lectura del dataframe por ciudades
     df = pd.read_csv(f'dataset/{path}.csv')
+    # AÑADIR AQUI EL PROCESAMIENTO DE LAS VARIABLES
+    # REALIZAR SOBRE EL DF ORIGINAL PARA EL PROCESAMIENTO
+
+    df["price_float"] = df["price"].apply(parseToFloatPrice)
+    
+    # FIN DEL PROCESAMIENTO
 
     grupos_diccionario = diccionario.groupby(by=['Table'])
     df_procesados = {}
+    
 
     for table, grupo in grupos_diccionario:    
         campos = []
-        for index, row in grupo.iterrows():
-            campos.append(row['Field'])
+        for row in grupo.iterrows():
+            campos.append(row[1]['Field'])
         df_procesados[table]=df.loc[:,campos]
 
-    df["price_float"] = df["price"].apply(parseToFloatPrice) 
     subListingTable = df_procesados.get('Listing')
     subHostTable = df_procesados.get('Host')
     subNeighborhoodTable = df_procesados.get('Neighborhood')
@@ -100,7 +117,7 @@ for archivo in os.listdir(directorio):
         hostTable = pd.concat([hostTable, subHostTable])
         neighborhoodTable = pd.concat([neighborhoodTable, subNeighborhoodTable])
 
-cityTable = pd.DataFrame(ciudades, columns=['ciudad', 'id'])
+cityTable = pd.DataFrame(ciudades, columns=['city', 'city_id'])
 print(cityTable)
 
 listingTable.to_sql('Listing', con=engine, if_exists='replace',index=False, dtype=diccionarioListing)
@@ -108,4 +125,3 @@ hostTable.to_sql('Host', con=engine, if_exists='replace',index=False, dtype=dicc
 neighborhoodTable.to_sql('Neighborhood', con=engine, if_exists='replace',index=False, dtype=diccionarioNeighborhood)
 cityTable.to_sql('City', con=engine, if_exists='replace',index=False)
 
-print(listingTable["price_float"])
