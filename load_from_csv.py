@@ -1,53 +1,12 @@
+import math
 import pandas as pd
-from sqlalchemy import create_engine, types
+from config import *
+from sqlalchemy import create_engine 
 import pymysql
 import os
 
 # Diccionario de los DataFrames
 # Sirve para que el motor pueda identificar que tipo es cada variable del DataFrame
-diccionarioHost={
-        "host_id": types.Integer(),
-        "host_name": types.Text(),
-        "host_since": types.Text(),
-        "host_location": types.Text(),
-        "host_response_time": types.Text(),
-        "host_response_rate": types.Text(),
-        "host_acceptance_rate": types.Text(),
-        }
-diccionarioNeighborhood={
-        "neighborhood": types.Text(),
-        "neighborhood_cleansed": types.Text(),
-        }
-diccionarioListing={
-        "id": types.Text(),
-        "name": types.Text(),
-        "latitude": types.Numeric(),
-        "longitude": types.Numeric(),
-        "property_type": types.Text(),
-        "room_type": types.Text(),
-        "accommodates": types.BigInteger(),
-        "bathrooms": types.Numeric(),
-        "bedrooms": types.Integer(),
-        "beds": types.Integer(),
-        "amenities": types.JSON(),
-        "price": types.Text(),
-        "price_float": types.Numeric(),
-        "minimum_nights_avg_ntm": types.Numeric(),
-        "maximum_nights_avg_ntm": types.Numeric(),
-        "availability_30": types.Integer(),
-        "availability_60": types.Integer(),
-        "availability_90": types.Integer(),
-        "availability_365": types.Integer(),
-        "number_of_reviews": types.Integer(),
-        "review_scores_rating": types.Numeric(),
-        "review_scores_accuracy": types.Numeric(),
-        "review_scores_cleanliness": types.Numeric(),
-        "review_scores_checkin": types.Numeric(),
-        "review_scores_communication": types.Numeric(),
-        "review_scores_location": types.Numeric(),
-        "review_scores_value": types.Numeric(),
-        "reviews_per_month": types.Numeric(),
-        }
 
 # Table Keys ['Host', 'Listing', 'Neighborhood']
 # Funcion para enlazar las ids de los host con sus respectivos alquileres
@@ -70,19 +29,38 @@ engine = create_engine('mysql+pymysql://'+user+':'+password+'@localhost/sio_db')
 diccionario = pd.read_csv('diccionario.csv')
 diccionario = diccionario[['Field', 'Ignore','Table']].dropna()
 
+
 def parseToFloatPrice(price):
-    return float(price.strip('$').replace(',',''))
+    result = float(price.strip('$').replace(',',''))
+    return result
+
+def parseTextToInt(text):
+    u=str(text).split(" ")[0]
+    try:
+        return(int(math.floor(float(u))))
+    except:
+        return 1
+def parseCurrency(number, rate):
+    try:
+        return number*rate
+    except:
+        return 0
 
 def get_tables(path):
     #Lectura del dataframe por ciudades
     df = pd.read_csv(f'dataset/{path}.csv')
     # AÑADIR AQUI EL PROCESAMIENTO DE LAS VARIABLES
     # REALIZAR SOBRE EL DF ORIGINAL PARA EL PROCESAMIENTO
+    
 
     df["price_float"] = df["price"].apply(parseToFloatPrice)
+    rate=currencyRates.get(path)
+    print(rate)
+    df["price_float"] = df["price_float"].apply(parseCurrency, rate=rate)
+    df['bathrooms'] = df['bathrooms_text'].apply(parseTextToInt)  
     
     # FIN DEL PROCESAMIENTO
-
+    
     grupos_diccionario = diccionario.groupby(by=['Table'])
     df_procesados = {}
     
@@ -96,7 +74,8 @@ def get_tables(path):
     subListingTable = df_procesados.get('Listing')
     subHostTable = df_procesados.get('Host')
     subNeighborhoodTable = df_procesados.get('Neighborhood')
-
+    subNeighborhoodTable = subNeighborhoodTable[['neighbourhood_cleansed']].drop_duplicates() 
+    
     subListingTable['city_id'] = id_gen-1
     df_procesados.update({'Listing': join_host_list(subListingTable, subHostTable)})
 
@@ -116,10 +95,20 @@ for archivo in os.listdir(directorio):
         listingTable = pd.concat([listingTable, subListingTable])
         hostTable = pd.concat([hostTable, subHostTable])
         neighborhoodTable = pd.concat([neighborhoodTable, subNeighborhoodTable])
-
 cityTable = pd.DataFrame(ciudades, columns=['city', 'city_id'])
-print(cityTable)
 
+# Añadir nuevos indices unicos a los barrios
+neighborhoodTable.reset_index(inplace=True)
+neighborhoodTable['neighbourhood_id'] = neighborhoodTable.index + 101
+neighborhoodTable= neighborhoodTable.drop(columns='index')
+
+# 
+listingTable = listingTable.merge(neighborhoodTable, on='neighbourhood_cleansed', how='left')
+listingTable.drop('neighbourhood_cleansed', axis=1, inplace=True)
+
+listingTable.to_csv("listing_with_neigh_id.csv")
+
+# Cargar a la BD
 listingTable.to_sql('Listing', con=engine, if_exists='replace',index=False, dtype=diccionarioListing)
 hostTable.to_sql('Host', con=engine, if_exists='replace',index=False, dtype=diccionarioHost)
 neighborhoodTable.to_sql('Neighborhood', con=engine, if_exists='replace',index=False, dtype=diccionarioNeighborhood)

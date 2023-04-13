@@ -2,7 +2,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 import pymysql
 import matplotlib.pyplot as plt
-#pymysql.install_as_MySQLdb()
+
 user=input("insert dbase user: ")
 password=input("insert password: ")
 
@@ -16,8 +16,18 @@ with engine.connect() as conn:
 
 #print(listingTable)
 #print(hostTable)
-#print(neighborhoodTable)
-print(cityTable)
+print(neighborhoodTable)
+#print(cityTable)
 
-listByCity = listingTable.merge(cityTable, how="inner", on='city_id')[['city','price_float']].groupby('city')
-print(listByCity.describe().to_csv("description.csv"))
+# Description By City
+#listByCity = listingTable.merge(cityTable, how="inner", on='city_id')[['city','price_float','bathrooms','bedrooms']].groupby('city')
+#listByCity.describe().to_csv("byCityDescription.csv")
+
+#listingTypes = listingTable.merge(cityTable, how="inner", on='city_id')[['city','room_type']].groupby('room_type')
+#print(listingTypes.describe())
+
+listByReviewsByMonth = listingTable.merge(cityTable, how="inner", on='city_id')[['city', 'reviews_per_month']].groupby('city')
+print(listByReviewsByMonth.describe())
+
+listingTable = listingTable[['reviews_per_month','neighbourhood_id']]
+print(listingTable.merge(neighborhoodTable, how="inner", on="neighbourhood_id")[['reviews_per_month','neighbourhood_cleansed']].groupby('neighbourhood_cleansed').describe())
