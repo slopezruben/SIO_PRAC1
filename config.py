@@ -10,6 +10,14 @@ currencyRates= {
         "rome": 1,
         "toronto": 0.68
 }
+diccionarioBathroom={
+    "bathrooms": types.Integer(),
+    "bathrooms_text": types.Text()
+}
+
+diccionarioProperty={
+        "property_type": types.Text()
+}
 
 diccionarioHost={
         "host_id": types.Integer(),
@@ -19,23 +27,20 @@ diccionarioHost={
         "host_response_time": types.Text(),
         "host_response_rate": types.Text(),
         "host_acceptance_rate": types.Text(),
-        }
+}
+
 diccionarioNeighborhood={
-        "neighborhood": types.Text(),
-        "neighborhood_cleansed": types.Text(),
-        }
+        "neighbourhood_cleansed": types.Text(),
+}
+
 diccionarioListing={
         "id": types.Text(),
         "name": types.Text(),
         "latitude": types.Numeric(),
         "longitude": types.Numeric(),
-        "property_type": types.Text(),
-        "room_type": types.Text(),
         "accommodates": types.BigInteger(),
-        "bathrooms": types.Integer(),
         "bedrooms": types.Integer(),
         "beds": types.Integer(),
-        "amenities": types.JSON(),
         "price": types.Text(),
         "price_float": types.Numeric(),
         "minimum_nights_avg_ntm": types.Numeric(),
@@ -53,4 +58,7 @@ diccionarioListing={
         "review_scores_location": types.Numeric(),
         "review_scores_value": types.Numeric(),
         "reviews_per_month": types.Numeric(),
-        }
+}
+
+diccionarioId={
+}
