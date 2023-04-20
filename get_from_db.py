@@ -21,5 +21,6 @@ with engine.connect() as conn:
     verificationsTable = pd.read_sql('verifications',con=conn)
 
 print(cityTable)
+print(listingTable['city_id'])
 mallorcaListing = listingTable[ listingTable['city_id'] == '2' ]
 print(mallorcaListing[['id','city_id']])

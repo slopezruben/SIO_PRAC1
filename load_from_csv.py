@@ -14,7 +14,7 @@ def join_host_list(jlistingTable, jhostTable):
     joinedListingTable = jlistingTable.assign(host_id=jhostTable['host_id'] )
     return joinedListingTable
 
-directorio = 'dataset'
+directorio = 'dataset_mini'
 ciudades = []
 id_gen = 1
 

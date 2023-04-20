@@ -87,6 +87,8 @@ def generate_mn_table(df, column_name, id_column_name):
 # Crear un sub dataframe de la ciudad, añadirle al sub data frame la id de la ciudad, 
 # juntarlo con el df grande
 
+df = pd.DataFrame()
+
 for archivo in os.listdir(directorio):
     try:
         if os.path.isfile(os.path.join(directorio,archivo)):
@@ -100,11 +102,13 @@ for archivo in os.listdir(directorio):
             city_df = compute_column(city_df,new_column="price_float",computable_column='price',function=parseToFloatPrice)
             city_df['price_float'] = city_df['price_float'].apply(parseCurrency, rate=rate) 
             city_df['bathrooms'] = city_df['bathrooms_text'].apply(parseTextToFloat)
-        try:
-            df.concat(city_df)
-        except:
-            df = city_df
-        
+            print(df)
+            if df.empty:
+                df = city_df.copy()
+            else:  
+                print('df concat')
+                df = pd.concat([df, city_df])
+                print(df)
     except:
         print("no s'ha pogut generar la llista de ciutats, cancelant la operacio")
         exit(1)
