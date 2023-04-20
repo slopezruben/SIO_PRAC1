@@ -15,11 +15,6 @@ password=input("insert password: ")
 
 # Creación del motor para conectar con la base de datos
 engine = create_engine('mysql+pymysql://'+user+':'+password+'@localhost/sio_db')
-# Lectura del diccionario
-# Hace falta actualizar el CSV cada vez que añadamos una variable procesada
-diccionario = pd.read_csv('diccionario.csv')
-diccionario = diccionario[['Field', 'Ignore','Table']].dropna()
-
 
 def parseToFloatPrice(price):
     result = float(price.strip('$').replace(',',''))
@@ -31,6 +26,7 @@ def parseTextToInt(text):
         return(int(math.floor(float(u))))
     except:
         return 1
+
 def parseCurrency(number, rate):
     try:
         return number*rate
@@ -42,7 +38,11 @@ def compute_column(df, new_column, computable_column, function):
     return df    
 
 def generate_dataframe(dataframe, columns_dict, key_column):
-    sub_dataframe = dataframe.loc[:, list(columns_dict.keys())]
+    subList=[]
+    for string in list(columns_dict.keys()):
+        if string not in diccionarioId:
+            subList.append(string)
+    sub_dataframe = dataframe.loc[:,subList]
     sub_dataframe = sub_dataframe.drop_duplicates()
     
     id_column_name = key_column+'_id'
@@ -50,12 +50,11 @@ def generate_dataframe(dataframe, columns_dict, key_column):
     sub_dataframe[id_column_name] = np.arange(len(sub_dataframe))
  
     dataframe=dataframe.merge(sub_dataframe[[key_column, id_column_name]], on=key_column)
-    columns_to_drop = [col for col in columns_dict.keys()]
+    columns_to_drop = [col for col in subList]
     dataframe.drop(columns_to_drop, axis=1, inplace=True)
     
     # Cambiamos el nombre de la columna restante por <nombre de la llave>_id
     dataframe.rename(columns={key_column: id_column_name}, inplace=True)
-    
     return dataframe, sub_dataframe
 
 def generate_mn_table(df, column_name, id_column_name):
@@ -68,7 +67,7 @@ def generate_mn_table(df, column_name, id_column_name):
         if row == None : continue 
         elements += row
     elements = list(set(elements))
-    elements_df = pd.DataFrame({'element': elements, 'id': range(len(elements))})
+    elements_df = pd.DataFrame({column_name: elements, 'id': range(len(elements))})
     # Generamos un dataframe que relaciona los identificadores de cada fila del dataframe original con los identificadores
     # de los elementos que le pertenecen
     ids = []
@@ -77,7 +76,7 @@ def generate_mn_table(df, column_name, id_column_name):
         row_id = row[id_column_name]
         if row[column_name] == None: continue
         for element in row[column_name]:
-            element_id = elements_df[elements_df['element'] == element]['id'].values[0]
+            element_id = elements_df[elements_df[column_name] == element]['id'].values[0]
             ids.append(row_id)
             element_ids.append(element_id)
     ids_df = pd.DataFrame({'id': ids, 'element_id': element_ids})
@@ -96,10 +95,15 @@ for archivo in os.listdir(directorio):
             id_gen += 1
             city_df = pd.read_csv(f"dataset/{archivo}")
             print(ciudad)
+            city_df['city_id'] = id_gen-1
+            rate=currencyRates.get(ciudad)
+            city_df = compute_column(city_df,new_column="price_float",computable_column='price',function=parseToFloatPrice)
+            city_df['price_float'] = city_df['price_float'].apply(parseCurrency, rate=rate) 
         try:
             df.concat(city_df)
         except:
             df = city_df
+        
     except:
         print("no s'ha pogut generar la llista de ciutats, cancelant la operacio")
         exit(1)
@@ -119,19 +123,23 @@ df, propertyTable = generate_dataframe(df, diccionarioProperty, 'property_type')
 print("Creando el dataframe de los Hosts")
 auxKeys = diccionarioHost.copy()
 auxKeys.update({'host_verifications': types.Text()})
+df['host_id_to_listing'] = df.loc[:,'host_id']
 df, hostTable = generate_dataframe(df, auxKeys, 'host_id')
 hostTable.drop(columns='host_id_id')
 print("Creando m:n hosts verificaciones")
 hostTable, verificationTable, mnHostVeriTable = generate_mn_table(hostTable, 'host_verifications', 'host_id')
+df.rename(columns={'host_id_to_listing': 'host_id'},inplace=True)
+
 
 print("Crea m:n listing amenities")
-df = compute_column(df,new_column="price_float",computable_column='price',function=parseToFloatPrice)
 auxKeys = list(diccionarioListing.keys())
 auxKeys.append('amenities')
+
 listingTable = df.loc[:, auxKeys]
 listingTable, amenitiesTable, mnListAmenTable = generate_mn_table(listingTable, 'amenities', 'id')
 
-print(listingTable.columns)
+
+
 # Cargar a la BD
 print("----CARGANDO EN LA BASE DE DATOS...---")
 print("LISTINGS")
@@ -143,7 +151,7 @@ neighborhoodTable.to_sql('Neighborhood', con=engine, if_exists='replace',index=F
 print("CITIES")
 cityTable.to_sql('City', con=engine, if_exists='replace',index=False)
 print("ROOMS")
-roomTable.to_sql('Rooms', con=engine, if_exists='replace',index=False, dtype=diccionarioNeighborhood)
+roomTable.to_sql('Rooms', con=engine, if_exists='replace',index=False, dtype=diccionarioRoom)
 print("BATHSROOMS")
 bathroomTable.to_sql('Bathrooms', con=engine, if_exists='replace',index=False, dtype=diccionarioBathroom)
 print("PROPERTY TYPES")
@@ -157,3 +165,5 @@ mnListAmenTable.to_sql('ListingAmenities', con=engine, if_exists='replace',index
 print("M:N HOST VERIFICATIONS")
 mnHostVeriTable.to_sql('HostVerification', con=engine, if_exists='replace',index=False)
 
+print(df.columns)
+print(df.head())

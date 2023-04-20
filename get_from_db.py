@@ -13,21 +13,13 @@ with engine.connect() as conn:
     hostTable = pd.read_sql('Host', con=conn)
     neighborhoodTable = pd.read_sql('Neighborhood', con=conn)
     cityTable = pd.read_sql('City', con=conn)
+    bathroomsTable = pd.read_sql('Bathrooms',con=conn)
+    hostVerificationTable = pd.read_sql('HostVerification',con=conn)
+    listingAmenitiesTable = pd.read_sql('ListingAmenities',con=conn)
+    propertiesTable = pd.read_sql('Properties',con=conn)
+    roomsTable = pd.read_sql('Rooms',con=conn)
+    verificationsTable = pd.read_sql('Verifications',con=conn)
 
-#print(listingTable)
-#print(hostTable)
-print(neighborhoodTable)
-#print(cityTable)
-
-# Description By City
-#listByCity = listingTable.merge(cityTable, how="inner", on='city_id')[['city','price_float','bathrooms','bedrooms']].groupby('city')
-#listByCity.describe().to_csv("byCityDescription.csv")
-
-#listingTypes = listingTable.merge(cityTable, how="inner", on='city_id')[['city','room_type']].groupby('room_type')
-#print(listingTypes.describe())
-
-listByReviewsByMonth = listingTable.merge(cityTable, how="inner", on='city_id')[['city', 'reviews_per_month']].groupby('city')
-print(listByReviewsByMonth.describe())
-
-listingTable = listingTable[['reviews_per_month','neighbourhood_id']]
-print(listingTable.merge(neighborhoodTable, how="inner", on="neighbourhood_id")[['reviews_per_month','neighbourhood_cleansed']].groupby('neighbourhood_cleansed').describe())
+print(cityTable)
+mallorcaListing = listingTable[ listingTable['city_id'] == '2' ]
+print(mallorcaListing[['id','city_id']])
