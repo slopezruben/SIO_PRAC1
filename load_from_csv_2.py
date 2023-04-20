@@ -14,18 +14,18 @@ user=input("insert db username: ")
 password=input("insert password: ")
 
 # Creación del motor para conectar con la base de datos
-engine = create_engine('mysql+pymysql://'+user+':'+password+'@localhost/sio_db')
+engine = create_engine('mysql+pymysql://'+user+':'+password+'@localhost/sio_db?charset=utf8mb4')
 
 def parseToFloatPrice(price):
     result = float(price.strip('$').replace(',',''))
     return result
 
-def parseTextToInt(text):
+def parseTextToFloat(text):
     u=str(text).split(" ")[0]
     try:
-        return(int(math.floor(float(u))))
+        return(float(u))
     except:
-        return 1
+        return 0.5
 
 def parseCurrency(number, rate):
     try:
@@ -99,6 +99,7 @@ for archivo in os.listdir(directorio):
             rate=currencyRates.get(ciudad)
             city_df = compute_column(city_df,new_column="price_float",computable_column='price',function=parseToFloatPrice)
             city_df['price_float'] = city_df['price_float'].apply(parseCurrency, rate=rate) 
+            city_df['bathrooms'] = city_df['bathrooms_text'].apply(parseTextToFloat)
         try:
             df.concat(city_df)
         except:
@@ -125,7 +126,7 @@ auxKeys = diccionarioHost.copy()
 auxKeys.update({'host_verifications': types.Text()})
 df['host_id_to_listing'] = df.loc[:,'host_id']
 df, hostTable = generate_dataframe(df, auxKeys, 'host_id')
-hostTable.drop(columns='host_id_id')
+hostTable.drop(columns='host_id_id', inplace=True)
 print("Creando m:n hosts verificaciones")
 hostTable, verificationTable, mnHostVeriTable = generate_mn_table(hostTable, 'host_verifications', 'host_id')
 df.rename(columns={'host_id_to_listing': 'host_id'},inplace=True)
@@ -143,27 +144,27 @@ listingTable, amenitiesTable, mnListAmenTable = generate_mn_table(listingTable, 
 # Cargar a la BD
 print("----CARGANDO EN LA BASE DE DATOS...---")
 print("LISTINGS")
-listingTable.to_sql('Listing', con=engine, if_exists='replace',index=False, dtype=diccionarioListing)
+listingTable.to_sql('Listing'.lower(), con=engine, if_exists='replace',index=False, dtype=diccionarioListing)
 print("HOSTS")
-hostTable.to_sql('Host', con=engine, if_exists='replace',index=False, dtype=diccionarioHost)
+hostTable.to_sql('Host'.lower(), con=engine, if_exists='replace',index=False, dtype=diccionarioHost)
 print("NEIGHBORHOODS")
-neighborhoodTable.to_sql('Neighborhood', con=engine, if_exists='replace',index=False, dtype=diccionarioNeighborhood)
+neighborhoodTable.to_sql('Neighborhood'.lower(), con=engine, if_exists='replace',index=False, dtype=diccionarioNeighborhood)
 print("CITIES")
-cityTable.to_sql('City', con=engine, if_exists='replace',index=False)
+cityTable.to_sql('City'.lower(), con=engine, if_exists='replace',index=False)
 print("ROOMS")
-roomTable.to_sql('Rooms', con=engine, if_exists='replace',index=False, dtype=diccionarioRoom)
+roomTable.to_sql('Rooms'.lower(), con=engine, if_exists='replace',index=False, dtype=diccionarioRoom)
 print("BATHSROOMS")
-bathroomTable.to_sql('Bathrooms', con=engine, if_exists='replace',index=False, dtype=diccionarioBathroom)
+bathroomTable.to_sql('Bathrooms'.lower(), con=engine, if_exists='replace',index=False, dtype=diccionarioBathroom)
 print("PROPERTY TYPES")
-propertyTable.to_sql('Properties', con=engine, if_exists='replace',index=False, dtype=diccionarioProperty)
+propertyTable.to_sql('Properties'.lower(), con=engine, if_exists='replace',index=False, dtype=diccionarioProperty)
 print("VERIFICATIONS")
-verificationTable.to_sql('Verifications', con=engine, if_exists='replace',index=False)
+verificationTable.to_sql('Verifications'.lower(), con=engine, if_exists='replace',index=False)
 print("AMENITIES")
-amenitiesTable.to_sql('Amenities', con=engine, if_exists='replace',index=False)
+amenitiesTable.to_sql('Amenities'.lower(), con=engine, if_exists='replace',index=False)
 print("M:N LISTING AMENITIES")
-mnListAmenTable.to_sql('ListingAmenities', con=engine, if_exists='replace',index=False)
+mnListAmenTable.to_sql('ListingAmenities'.lower(), con=engine, if_exists='replace',index=False)
 print("M:N HOST VERIFICATIONS")
-mnHostVeriTable.to_sql('HostVerification', con=engine, if_exists='replace',index=False)
+mnHostVeriTable.to_sql('HostVerification'.lower(), con=engine, if_exists='replace',index=False)
 
 print(df.columns)
 print(df.head())
