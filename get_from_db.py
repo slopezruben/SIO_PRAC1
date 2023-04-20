@@ -8,6 +8,9 @@ password=input("insert password: ")
 
 engine = create_engine('mysql+pymysql://'+user+':'+password+'@localhost/sio_db')
 
+def join_dataframes(df1, df2, join_on, column_list):
+    return df1.merge(df2, how='inner', on=join_on)[column_list]
+
 with engine.connect() as conn:
     listingTable = pd.read_sql('listing', con=conn)
     hostTable = pd.read_sql('host', con=conn)
@@ -24,3 +27,6 @@ print(cityTable)
 print(listingTable['city_id'])
 mallorcaListing = listingTable[ listingTable['city_id'] == '2' ]
 print(mallorcaListing[['id','city_id']])
+
+price_bathroom_table = join_dataframes(mallorcaListing, bathroomsTable, 'bathrooms_text_id', ['bathrooms','price'])
+print(price_bathroom_table)
