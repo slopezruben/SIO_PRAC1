@@ -13,7 +13,12 @@ engine = create_engine('mysql+pymysql://'+user+':'+password+'@localhost/sio_db')
 def get_city_table(city_name):
     index = (cityTable.loc[cityTable['city'] == city_name, 'city_id'].tolist()[0])
     return listingTable[listingTable['city_id'] == str(index)]
-
+##########################
+#   df1, df2 = dataframes, si necesitas información de solo el primero pasa el mismo dos veces
+#   join_on = string, nombre de la columna en la que hacer el join, pasarle '' en caso de que solo evalues un dataframe
+#   column_list = lista de longitud 2, le pasas los nombres de las dos columnas a analizar
+#   file_name = string, nombre de la imagen
+#########################
 def get_scatter_plot(df1, df2, join_on, column_list, file_name):
     if join_on == '':
         print("no join on")
@@ -28,11 +33,17 @@ def get_scatter_plot(df1, df2, join_on, column_list, file_name):
     plt.plot(correlated_dataframe[column_list[0]], poly1d_fn(correlated_dataframe[column_list[0]]), c='r')
     plt.savefig(file_name)
 
-def get_frequency_plot(df1, df2, join_on, column_name, column_list, file_name, top=10):
-    if not column_list:
+##########################
+#   df1, df2 = dataframes, si necesitas información de solo el primero pasa el mismo dos veces
+#   join_on = string, nombre de la columna en la que hacer el join, pasarle '' en caso de que solo evalues un dataframe
+#   column_name = string, nombre de la columna a analizar 
+#   file_name = string, nombre de la imagen
+#########################
+def get_frequency_plot(df1, df2, join_on, column_name, file_name, top=10):
+    if join_on == '':
         df = df1
     else:
-        df = join_dataframes(df1, df2, join_on, column_list)
+        df = join_dataframes(df1, df2, join_on, [column_name])
 
     df_freq = pd.DataFrame(df[column_name].value_counts())
     df_freq = df_freq.sort_values(by=column_name, ascending=False).head(n=top)
@@ -62,6 +73,6 @@ with engine.connect() as conn:
 # City Listings
 mallorcaListing = get_city_table('mallorca')
 get_scatter_plot(mallorcaListing, bathroomsTable, 'bathrooms_text_id', ['bathrooms','price_float'], 'menorquitaMoney1')
-get_frequency_plot(mallorcaListing, bathroomsTable, 'bathrooms_text_id', 'bathrooms_text', ['bathrooms_text'], 'bathroomFreq')
+get_frequency_plot(mallorcaListing, bathroomsTable, 'bathrooms_text_id', 'bathrooms_text', 'bathroomFreq')
 
-get_frequency_plot(listingAmenitiesTable, amenitiesTable, 'amenities_id', 'amenities', ['amenities'], 'commonammenities',top=50)
+get_frequency_plot(listingAmenitiesTable, amenitiesTable, 'amenities_id', 'amenities', 'commonammenities',top=50)
