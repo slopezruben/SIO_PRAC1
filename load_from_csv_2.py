@@ -5,7 +5,7 @@ import numpy as np
 from config import *
 from sqlalchemy import create_engine 
 
-directorio = 'dataset'
+directorio = 'mallorca'
 ciudades = []
 id_gen = 1
 
@@ -67,7 +67,7 @@ def generate_mn_table(df, column_name, id_column_name):
         if row == None : continue 
         elements += row
     elements = list(set(elements))
-    elements_df = pd.DataFrame({column_name: elements, 'id': range(len(elements))})
+    elements_df = pd.DataFrame({column_name: elements, column_name+'_id': range(len(elements))})
     # Generamos un dataframe que relaciona los identificadores de cada fila del dataframe original con los identificadores
     # de los elementos que le pertenecen
     ids = []
@@ -76,10 +76,11 @@ def generate_mn_table(df, column_name, id_column_name):
         row_id = row[id_column_name]
         if row[column_name] == None: continue
         for element in row[column_name]:
-            element_id = elements_df[elements_df[column_name] == element]['id'].values[0]
+            element_id = elements_df[elements_df[column_name] == element][column_name+'_id'].values[0]
             ids.append(row_id)
             element_ids.append(element_id)
-    ids_df = pd.DataFrame({'id': ids, 'element_id': element_ids})
+    
+    ids_df = pd.DataFrame({'id': ids, column_name+'_id': element_ids})
     
     df=df.drop(columns=column_name)
     return df, elements_df, ids_df
@@ -95,7 +96,7 @@ for archivo in os.listdir(directorio):
             ciudad, extension = os.path.splitext(archivo)
             ciudades.append((ciudad,id_gen))
             id_gen += 1
-            city_df = pd.read_csv(f"dataset/{archivo}")
+            city_df = pd.read_csv(f"{directorio}/{archivo}")
             print(ciudad)
             city_df['city_id'] = id_gen-1
             rate=currencyRates.get(ciudad)
