@@ -5,7 +5,7 @@ import numpy as np
 from config import *
 from sqlalchemy import create_engine 
 
-directorio = 'mallorca'
+directorio = 'evaldataset'
 ciudades = []
 id_gen = 1
 
@@ -113,6 +113,8 @@ for archivo in os.listdir(directorio):
     except:
         print("no s'ha pogut generar la llista de ciutats, cancelant la operacio")
         exit(1)
+#### Correr dos veces 
+df = df.fillna(0)
 print("Creando dataframe de la ciudad")
 cityTable = pd.DataFrame(ciudades, columns=['city', 'city_id'])
 
@@ -170,6 +172,3 @@ print("M:N LISTING AMENITIES")
 mnListAmenTable.to_sql('ListingAmenities'.lower(), con=engine, if_exists='replace',index=False)
 print("M:N HOST VERIFICATIONS")
 mnHostVeriTable.to_sql('HostVerification'.lower(), con=engine, if_exists='replace',index=False)
-
-print(df.columns)
-print(df.head())

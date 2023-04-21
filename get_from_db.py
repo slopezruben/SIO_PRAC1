@@ -58,17 +58,17 @@ def join_dataframes(df1, df2, join_on, column_list):
         return df1.merge(df2, how='inner', on=join_on)[column_list]
 
 with engine.connect() as conn:
-    listingTable = pd.read_sql('listing', con=conn)
-    hostTable = pd.read_sql('host', con=conn)
-    neighborhoodTable = pd.read_sql('neighborhood', con=conn)
-    cityTable = pd.read_sql('city', con=conn)
-    bathroomsTable = pd.read_sql('bathrooms',con=conn)
-    hostVerificationTable = pd.read_sql('hostverification',con=conn)
-    listingAmenitiesTable = pd.read_sql('listingamenities',con=conn)
-    amenitiesTable = pd.read_sql('amenities', con=conn)
-    propertiesTable = pd.read_sql('properties',con=conn)
-    roomsTable = pd.read_sql('rooms',con=conn)
-    verificationsTable = pd.read_sql('verifications',con=conn)
+    listingTable = pd.read_sql('listing', con=conn).fillna(0)
+    hostTable = pd.read_sql('host', con=conn).fillna(0)
+    neighborhoodTable = pd.read_sql('neighborhood', con=conn).fillna(0)
+    cityTable = pd.read_sql('city', con=conn).fillna(0)
+    bathroomsTable = pd.read_sql('bathrooms',con=conn).fillna(0)
+    hostVerificationTable = pd.read_sql('hostverification',con=conn).fillna(0)
+    listingAmenitiesTable = pd.read_sql('listingamenities',con=conn).fillna(0)
+    amenitiesTable = pd.read_sql('amenities', con=conn).fillna(0)
+    propertiesTable = pd.read_sql('properties',con=conn).fillna(0)
+    roomsTable = pd.read_sql('rooms',con=conn).fillna(0)
+    verificationsTable = pd.read_sql('verifications',con=conn).fillna(0)
 
 # City Listings
 mallorcaListing = get_city_table('mallorca')
